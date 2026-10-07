@@ -112,38 +112,38 @@
   </div>
 
   <script>
-    const URL_GIST = "https://gist.githubusercontent.com/criquio/7a24a073b6704a10a0b520bbfcd6d9aa/raw/users.json";
+    const URL_GIST = "https://gist.githubusercontent.com/criquio/7a24a073b6704a10a0b520bbfcd6d9aa/raw/users.json" + Date.now();
 
     async function carregarUsuarios() {
       const tituloElemento = document.getElementById("titulo-tabela");
       const tbody = document.getElementById("tabela-body");
 
       try {
-        const response = await fetch(URL_GIST);
+        const response = await fetch(URL_GIST, { cache: "no-store" });
         
         if (!response.ok) {
           throw new Error(`Erro na requisição: ${response.status}`);
         }
 
-        // Lê a resposta em UTF-8 para garantir acentuação correta
+        // 1. Obtém os bytes brutos da resposta e decodifica explicitamente como UTF-8
         const buffer = await response.arrayBuffer();
         const decoder = new TextDecoder("utf-8");
         const textoBruto = decoder.decode(buffer);
 
-        // Captura todos os blocos no formato { ... }
+        // 2. Extrai todos os blocos no formato { ... } usando Regex
         const blocosJson = textoBruto.match(/\{[\s\S]*?\}/g);
 
         if (!blocosJson) {
-          throw new Error("Nenhum registro encontrado no JSON.");
+          throw new Error("Nenhum objeto JSON encontrado.");
         }
 
+        // 3. Converte cada bloco JSON individualmente
         const usuarios = blocosJson.map(bloco => JSON.parse(bloco));
 
-        // Atualiza a quantidade no título dentro da primeira linha
+        // Atualiza a quantidade e renderiza
         tituloElemento.textContent = `USUÁRIOS REGISTRADOS: ${usuarios.length}`;
         tbody.innerHTML = "";
 
-        // Popula as linhas com os dados dos usuários
         usuarios.forEach((usuario, index) => {
           const tr = document.createElement("tr");
 
@@ -169,6 +169,5 @@
 
     carregarUsuarios();
   </script>
-
 </body>
 </html>
