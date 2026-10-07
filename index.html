@@ -12,12 +12,6 @@
       color: #333;
     }
 
-    h1 {
-      font-size: 1.5rem;
-      margin-bottom: 15px;
-      color: #2c3e50;
-    }
-
     .table-container {
       overflow-x: auto;
       background-color: #fff;
@@ -33,17 +27,32 @@
       font-size: 14px;
     }
 
-    thead th {
-      background-color: #34495e;
-      color: #ffffff;
+    /* Primeira linha da tabela (Título) */
+    thead tr.title-row th {
+      background-color: #000000; /* Preto */
+      color: #ffffff;            /* Texto branco */
+      text-align: center;         /* Centralizado */
+      font-size: 1.1rem;
+      font-weight: bold;
+      padding: 12px;
+      letter-spacing: 1px;
+      border: 1px solid #000000;
+    }
+
+    /* Cabeçalhos das colunas */
+    thead tr.header-row th {
+      background-color: #4d4d4d; /* Cinza 70% */
+      color: #ffffff;            /* Texto em branco para legibilidade */
+      text-align: center;         /* Centralizado nas células */
       padding: 8px 12px;
       font-weight: 600;
       text-transform: uppercase;
       font-size: 12px;
       letter-spacing: 0.5px;
-      border: 1px solid #2c3e50;
+      border: 1px solid #333333;
     }
 
+    /* Linhas do corpo da tabela */
     tbody tr {
       height: 20px;
       transition: background-color 0.2s ease;
@@ -78,12 +87,15 @@
 </head>
 <body>
 
-  <h1 id="titulo-tabela">USUÁRIOS REGISTRADOS: Carregando...</h1>
-
   <div class="table-container">
     <table>
       <thead>
-        <tr>
+        <!-- Linha do Título Integrada -->
+        <tr class="title-row">
+          <th id="titulo-tabela" colspan="8">USUÁRIOS REGISTRADOS: Carregando...</th>
+        </tr>
+        <!-- Cabeçalhos das Colunas -->
+        <tr class="header-row">
           <th>#</th>
           <th>DATA</th>
           <th>HORA</th>
@@ -100,38 +112,38 @@
   </div>
 
   <script>
-    const URL_GIST = "https://gist.githubusercontent.com/criquio/7a24a073b6704a10a0b520bbfcd6d9aa/raw/users.json" + Date.now();
+    const URL_GIST = "https://gist.githubusercontent.com/criquio/7a24a073b6704a10a0b520bbfcd6d9aa/raw/users.json";
 
     async function carregarUsuarios() {
       const tituloElemento = document.getElementById("titulo-tabela");
       const tbody = document.getElementById("tabela-body");
 
       try {
-        const response = await fetch(URL_GIST, { cache: "no-store" });
+        const response = await fetch(URL_GIST);
         
         if (!response.ok) {
           throw new Error(`Erro na requisição: ${response.status}`);
         }
 
-        // 1. Obtém os bytes brutos da resposta e decodifica explicitamente como UTF-8
+        // Lê a resposta em UTF-8 para garantir acentuação correta
         const buffer = await response.arrayBuffer();
         const decoder = new TextDecoder("utf-8");
         const textoBruto = decoder.decode(buffer);
 
-        // 2. Extrai todos os blocos no formato { ... } usando Regex
+        // Captura todos os blocos no formato { ... }
         const blocosJson = textoBruto.match(/\{[\s\S]*?\}/g);
 
         if (!blocosJson) {
-          throw new Error("Nenhum objeto JSON encontrado.");
+          throw new Error("Nenhum registro encontrado no JSON.");
         }
 
-        // 3. Converte cada bloco JSON individualmente
         const usuarios = blocosJson.map(bloco => JSON.parse(bloco));
 
-        // Atualiza a quantidade e renderiza
+        // Atualiza a quantidade no título dentro da primeira linha
         tituloElemento.textContent = `USUÁRIOS REGISTRADOS: ${usuarios.length}`;
         tbody.innerHTML = "";
 
+        // Popula as linhas com os dados dos usuários
         usuarios.forEach((usuario, index) => {
           const tr = document.createElement("tr");
 
