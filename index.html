@@ -113,17 +113,22 @@
           throw new Error(`Erro na requisição: ${response.status}`);
         }
 
-        // 1. Lê o arquivo como texto simples
-        const textoBruto = await response.text();
+        // 1. Obtém os bytes brutos da resposta e decodifica explicitamente como UTF-8
+        const buffer = await response.arrayBuffer();
+        const decoder = new TextDecoder("utf-8");
+        const textoBruto = decoder.decode(buffer);
 
-        // 2. Transforma múltiplos objetos soltos em um Array JSON válido
-        // Substitui "}" seguido de "{" por "},{" e envolve o conjunto todo com "[" e "]"
-        const textoFormatado = "[" + textoBruto.trim().replace(/}\s*\{/g, "},{") + "]";
+        // 2. Extrai todos os blocos no formato { ... } usando Regex
+        const blocosJson = textoBruto.match(/\{[\s\S]*?\}/g);
 
-        // 3. Agora o parse funciona perfeitamente sem erros de sintaxe
-        const usuarios = JSON.parse(textoFormatado);
+        if (!blocosJson) {
+          throw new Error("Nenhum objeto JSON encontrado.");
+        }
 
-        // Atualiza a contagem e exibe na página
+        // 3. Converte cada bloco JSON individualmente
+        const usuarios = blocosJson.map(bloco => JSON.parse(bloco));
+
+        // Atualiza a quantidade e renderiza
         tituloElemento.textContent = `USUÁRIOS REGISTRADOS: ${usuarios.length}`;
         tbody.innerHTML = "";
 
@@ -145,7 +150,7 @@
         });
 
       } catch (error) {
-        console.error("Erro ao carregar dados:", error);
+        console.error("Erro ao processar dados:", error);
         tituloElemento.innerHTML = `<span class="error">Erro ao carregar os dados dos usuários.</span>`;
       }
     }
