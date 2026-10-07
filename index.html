@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Usuários Registrados</title>
+  <style>
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background-color: #f4f6f9;
+      margin: 20px;
+      color: #333;
+    }
+
+    .table-container {
+      overflow-x: auto;
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      padding: 10px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 14px;
+    }
+
+    /* Primeira linha da tabela (Título) */
+    thead tr.title-row th {
+      background-color: #000000; /* Preto */
+      color: #ffffff;            /* Texto branco */
+      text-align: center;         /* Centralizado */
+      font-size: 22px;
+      font-weight: bold;
+      padding: 8px;
+      letter-spacing: 1px;
+      border: 1px solid #000000;
+    }
+
+    /* Cabeçalhos das colunas */
+    thead tr.header-row th {
+      background-color: #4d4d4d; /* Cinza 70% */
+      color: #ffffff;            /* Texto em branco para legibilidade */
+      text-align: center;         /* Centralizado nas células */
+      padding: 8px 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 12px;
+      letter-spacing: 0.5px;
+      border: 1px solid #333333;
+    }
+
+    /* Linhas do corpo da tabela */
+    tbody tr {
+      height: 20px;
+      transition: background-color 0.2s ease;
+    }
+
+    tbody tr:nth-child(even) {
+      background-color: #f8f9fa;
+    }
+
+    tbody tr:hover {
+      background-color: #e9ecef;
+    }
+
+    tbody td {
+      padding: 4px 12px;
+      border: 1px solid #dee2e6;
+      white-space: nowrap;
+    }
+
+    td.col-index {
+      text-align: center;
+      font-weight: bold;
+      color: #7f8c8d;
+      width: 40px;
+    }
+
+    .error {
+      color: #e74c3c;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="table-container">
+    <table>
+      <thead>
+        <!-- Linha do Título Integrada -->
+        <tr class="title-row">
+          <th id="titulo-tabela" colspan="8">USUÁRIOS REGISTRADOS: Carregando...</th>
+        </tr>
+        <!-- Cabeçalhos das Colunas -->
+        <tr class="header-row">
+          <th>#</th>
+          <th>DATA</th>
+          <th>HORA</th>
+          <th>SISTEMA OPERACIONAL</th>
+          <th>DISPOSITIVO</th>
+          <th>PAÍS</th>
+          <th>ESTADO</th>
+          <th>CIDADE</th>
+        </tr>
+      </thead>
+      <tbody id="tabela-body">
+      </tbody>
+    </table>
+  </div>
+
+<script>
+  // Adicionamos um proxy para permitir requisições no protocolo file:// local
+  const GIST_ORIGINAL = "https://gist.githubusercontent.com/criquio/7a24a073b6704a10a0b520bbfcd6d9aa/raw/users.json";
+  
+  // Se estiver rodando como arquivo local (file://), usa o proxy CORS
+  const URL_GIST = window.location.protocol === "file:" 
+    ? `https://api.allorigins.win/raw?url=${encodeURIComponent(GIST_ORIGINAL)}`
+    : GIST_ORIGINAL;
+
+  async function carregarUsuarios() {
+    const tituloElemento = document.getElementById("titulo-tabela");
+    const tbody = document.getElementById("tabela-body");
+
+    try {
+      const response = await fetch(URL_GIST);
+      
+      if (!response.ok) {
+        throw new Error(`Erro na requisição: ${response.status}`);
+      }
+
+      // Obtém os dados e garante UTF-8
+      const buffer = await response.arrayBuffer();
+      const decoder = new TextDecoder("utf-8");
+      const textoBruto = decoder.decode(buffer);
+
+      // Extrai todos os blocos no formato { ... }
+      const blocosJson = textoBruto.match(/\{[\s\S]*?\}/g);
+
+      if (!blocosJson) {
+        throw new Error("Nenhum objeto JSON encontrado.");
+      }
+
+      const usuarios = blocosJson.map(bloco => JSON.parse(bloco));
+
+      // Atualiza o título e limpa a tabela
+      tituloElemento.textContent = `USUÁRIOS REGISTRADOS: ${usuarios.length}`;
+      tbody.innerHTML = "";
+
+      // Preenche as linhas
+      usuarios.forEach((usuario, index) => {
+        const tr = document.createElement("tr");
+
+        tr.innerHTML = `
+          <td class="col-index">${index + 1}</td>
+          <td>${usuario.data || '-'}</td>
+          <td>${usuario.hora || '-'}</td>
+          <td>${usuario.so || '-'}</td>
+          <td>${usuario.dispositivo || '-'}</td>
+          <td>${usuario.pais || '-'}</td>
+          <td>${usuario.estado || '-'}</td>
+          <td>${usuario.cidade || '-'}</td>
+        `;
+
+        tbody.appendChild(tr);
+      });
+
+    } catch (error) {
+      console.error("Erro ao processar dados:", error);
+      tituloElemento.innerHTML = `<span class="error">Erro ao carregar os dados dos usuários.</span>`;
+    }
+  }
+
+  carregarUsuarios();
+</script>
+
+</body>
+</html>
