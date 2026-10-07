@@ -45,7 +45,7 @@
     }
 
     tbody tr {
-      height: 20px; /* Altura desejada para as linhas */
+      height: 20px;
       transition: background-color 0.2s ease;
     }
 
@@ -58,7 +58,7 @@
     }
 
     tbody td {
-      padding: 4px 12px; /* Padding reduzido para manter a altura de ~20px */
+      padding: 4px 12px;
       border: 1px solid #dee2e6;
       white-space: nowrap;
     }
@@ -70,11 +70,6 @@
       width: 40px;
     }
 
-    .loading {
-      font-style: italic;
-      color: #666;
-    }
-
     .error {
       color: #e74c3c;
       font-weight: bold;
@@ -83,7 +78,7 @@
 </head>
 <body>
 
-  <h1 id="titulo-tabela">USUÁRIOS REGISTRADOS: <span class="loading">Carregando...</span></h1>
+  <h1 id="titulo-tabela">USUÁRIOS REGISTRADOS: Carregando...</h1>
 
   <div class="table-container">
     <table>
@@ -100,72 +95,63 @@
         </tr>
       </thead>
       <tbody id="tabela-body">
-        <!-- As linhas serão inseridas dinamicamente via JavaScript -->
       </tbody>
     </table>
   </div>
 
   <script>
-  const URL_GIST = "https://gist.githubusercontent.com/criquio/7a24a073b6704a10a0b520bbfcd6d9aa/raw/users.json";
+    const URL_GIST = "https://gist.githubusercontent.com/criquio/7a24a073b6704a10a0b520bbfcd6d9aa/raw/users.json?v=" + Date.now();
 
-  async function carregarUsuarios() {
-    const tituloElemento = document.getElementById("titulo-tabela");
-    const tbody = document.getElementById("tabela-body");
+    async function carregarUsuarios() {
+      const tituloElemento = document.getElementById("titulo-tabela");
+      const tbody = document.getElementById("tabela-body");
 
-    try {
-      const response = await fetch(URL_GIST);
-      
-      if (!response.ok) {
-        throw new Error(`Erro ao buscar dados: ${response.status}`);
-      }
-
-      // 1. Lê o conteúdo bruto como texto
-      const textoBruto = await response.text();
-
-      // 2. Converte múltiplos objetos separados por linha/espaço em um array JSON válido
-      let usuarios = [];
       try {
-        // Tenta parsear direto caso seja um JSON tradicional
-        usuarios = JSON.parse(textoBruto);
-        if (!Array.isArray(usuarios)) usuarios = [usuarios];
-      } catch (e) {
-        // Caso falhe, formata o texto envolvendo com [ ] e separando os objetos por vírgula
-        const jsonFormatado = '[' + textoBruto.trim().replace(/}\s*{/g, '},{') + ']';
-        usuarios = JSON.parse(jsonFormatado);
+        const response = await fetch(URL_GIST, { cache: "no-store" });
+        
+        if (!response.ok) {
+          throw new Error(`Erro na requisição: ${response.status}`);
+        }
+
+        // 1. Lê o arquivo como texto simples
+        const textoBruto = await response.text();
+
+        // 2. Transforma múltiplos objetos soltos em um Array JSON válido
+        // Substitui "}" seguido de "{" por "},{" e envolve o conjunto todo com "[" e "]"
+        const textoFormatado = "[" + textoBruto.trim().replace(/}\s*\{/g, "},{") + "]";
+
+        // 3. Agora o parse funciona perfeitamente sem erros de sintaxe
+        const usuarios = JSON.parse(textoFormatado);
+
+        // Atualiza a contagem e exibe na página
+        tituloElemento.textContent = `USUÁRIOS REGISTRADOS: ${usuarios.length}`;
+        tbody.innerHTML = "";
+
+        usuarios.forEach((usuario, index) => {
+          const tr = document.createElement("tr");
+
+          tr.innerHTML = `
+            <td class="col-index">${index + 1}</td>
+            <td>${usuario.data || '-'}</td>
+            <td>${usuario.hora || '-'}</td>
+            <td>${usuario.so || '-'}</td>
+            <td>${usuario.dispositivo || '-'}</td>
+            <td>${usuario.pais || '-'}</td>
+            <td>${usuario.estado || '-'}</td>
+            <td>${usuario.cidade || '-'}</td>
+          `;
+
+          tbody.appendChild(tr);
+        });
+
+      } catch (error) {
+        console.error("Erro ao carregar dados:", error);
+        tituloElemento.innerHTML = `<span class="error">Erro ao carregar os dados dos usuários.</span>`;
       }
-
-      // Atualiza o título com a quantidade de usuários
-      tituloElemento.textContent = `USUÁRIOS REGISTRADOS: ${usuarios.length}`;
-
-      // Limpa o corpo da tabela
-      tbody.innerHTML = "";
-
-      // Percorre os dados e monta as linhas da tabela
-      usuarios.forEach((usuario, index) => {
-        const tr = document.createElement("tr");
-
-        tr.innerHTML = `
-          <td class="col-index">${index + 1}</td>
-          <td>${usuario.data || '-'}</td>
-          <td>${usuario.hora || '-'}</td>
-          <td>${usuario.so || '-'}</td>
-          <td>${usuario.dispositivo || '-'}</td>
-          <td>${usuario.pais || '-'}</td>
-          <td>${usuario.estado || '-'}</td>
-          <td>${usuario.cidade || '-'}</td>
-        `;
-
-        tbody.appendChild(tr);
-      });
-
-    } catch (error) {
-      console.error("Erro ao carregar os dados:", error);
-      tituloElemento.innerHTML = `<span class="error">Erro ao carregar os dados dos usuários.</span>`;
     }
-  }
 
-  // Executa a função ao carregar a página
-  carregarUsuarios();
-</script>
+    carregarUsuarios();
+  </script>
+
 </body>
 </html>
